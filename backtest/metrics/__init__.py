@@ -1,4 +1,3 @@
-from numpy.testing._private.utils import assert_
 import pandas as pd
 import numpy as np
 
