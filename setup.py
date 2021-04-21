@@ -14,8 +14,7 @@ setup(
         description=DESCRIPTION,
         long_description=LONG_DESCRIPTION,
         packages=find_packages(),
-        install_requires=[], # add any additional packages that 
-        # needs to be installed along with your package. Eg: 'caer'
+        install_requires=['pandas', 'numpy'],
         
         keywords=['python', 'first package'],
         classifiers= [
