@@ -320,3 +320,6 @@ def get_tracking_error(strategy, benchmark, start_date, end_date) -> float:
 
     tracking_error = ann_ex_r / ir
     return tracking_error
+
+def pass():
+    pass
