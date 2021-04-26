@@ -1,0 +1,7 @@
+README.md
+setup.py
+xquant.egg-info/PKG-INFO
+xquant.egg-info/SOURCES.txt
+xquant.egg-info/dependency_links.txt
+xquant.egg-info/requires.txt
+xquant.egg-info/top_level.txt
