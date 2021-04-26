@@ -1,25 +1,6 @@
 import pandas as pd
 import numpy as np
-import datetime
-
-def check_prices(**kwargs) -> bool:
-    '''checks if one or more series of prices are of correct types'''
-    for key, value in kwargs.items():
-        if not isinstance(value, pd.Series):
-            print(f'{key} must be a pandas.Series')
-            return False
-        elif not isinstance(value.index, pd.DatetimeIndex): 
-            print(f'index of {key} must be a pandas.DatetimeIndex')
-            return False
-    return True
-
-def check_time(**kwargs) -> bool:
-    '''checks if one or more timestamps are of correct types'''
-    for key, value in kwargs.items():
-        if (not isinstance(value, pd.Timestamp)) or (not isinstance(value, datetime.datetime)):
-            print(f'{key} must be a pandas.Timestamp or datetime.datetime')
-            return False
-    return True
+from xuquant.utils import check_prices, check_time
 
 def get_daily_returns(prices) -> pd.Series:
     '''calculates the daily returns of a prices time-series'''
@@ -320,6 +301,3 @@ def get_tracking_error(strategy, benchmark, start_date, end_date) -> float:
 
     tracking_error = ann_ex_r / ir
     return tracking_error
-
-def pass():
-    pass
