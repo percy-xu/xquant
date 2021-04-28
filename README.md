@@ -22,7 +22,7 @@ In essence, `xquant` allows you to code less and think more.
 From your command line interface, run:
 
 ```bash
-pip install xqant
+pip install xquant
 ```
 
 ### Examples
