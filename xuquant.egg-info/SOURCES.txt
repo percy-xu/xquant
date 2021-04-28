@@ -1,8 +1,0 @@
-setup.py
-xuquant/__init__.py
-xuquant/fu.py
-xuquant/hello.py
-xuquant.egg-info/PKG-INFO
-xuquant.egg-info/SOURCES.txt
-xuquant.egg-info/dependency_links.txt
-xuquant.egg-info/top_level.txt
