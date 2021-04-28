@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 VERSION = '0.0.1' 
-DESCRIPTION = 'My first Python package'
-LONG_DESCRIPTION = 'My first Python package with a slightly longer description'
+DESCRIPTION = 'quant is hard, make it easier.'
+LONG_DESCRIPTION = 'xquant is a python 3 package that helps build and test strategies in the field of quantitative finance.'
 
 # Setting up
 setup(
@@ -14,9 +14,9 @@ setup(
         description=DESCRIPTION,
         long_description=LONG_DESCRIPTION,
         packages=find_packages(),
-        install_requires=['pandas', 'numpy', 'datetime'],
+        install_requires=['pandas', 'numpy', 'plotly'],
         
-        keywords=['python', 'first package'],
+        keywords=['python', 'quantitative-finance'],
         classifiers= [
             "Development Status :: 3 - Alpha",
             "Intended Audience :: Researchers",
