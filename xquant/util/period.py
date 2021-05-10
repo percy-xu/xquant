@@ -12,10 +12,10 @@ class Period():
     Parameters
     ----------
     start_time: a datetime.datetime object
-    end_time = None: a datetime.datetime object later than start_time
-    duration = None: a datetime.timedelta object
+    (optional) end_time = None: a datetime.datetime object later than start_time
+    (optional) duration = None: a datetime.timedelta object
 
-    One of end_time or duration must be provided
+    One of `end_time` or `duration` must be provided
     '''
     def __init__(self, start_time, end_time=None, duration=None) -> None:
         # make sure end_time is later than start_time
