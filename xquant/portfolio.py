@@ -6,43 +6,52 @@ from xquant.util import check_time
 
 class Portfolio():
 
-    # constructor
     def __init__(
         self, 
-        stocks:dict, 
+        long:dict,
+        short:dict,
         cash:float
         ) -> None:
 
-        self.stocks = stocks
+        self.long = long
+        self.short = short
         self.cash = cash
     
-    # methods
     def get_stock_liquidation(
         self, 
         date:Union[pd.Timestamp, datetime],
         df_prices:pd.DataFrame
         ) -> float:
 
-        '''calculates the value of all stocks in a portfolio at a given time'''
+        '''calculates the value of all long/short positions in a portfolio at a given time'''
         assert check_time(date)
 
+        df_prices = df_prices.loc[:date] # trim df to be within valid dates
         agg_stock_value = 0
-        sell = []
 
-        for stock, shares in self.stocks.items():
-            price = df_prices.at[date, stock]
-            stock_value = price * shares
-            # was this stock suspended for trading?
-            if np.isnan(df_prices.at[date, stock]):
+        # first, consider long positions
+        for stock, shares in self.long.items():
+            try:
+                long_price = df_prices.at[date, stock]
+            except KeyError:
                 # when was this stock last traded?
                 last_traded = df_prices[stock].last_valid_index()
-                self.cash += df_prices.at[last_traded, stock]
-                sell.append(stock)
-            else:
-                agg_stock_value += stock_value
+                long_price = df_prices.at[last_traded, stock]
 
-        for stock in sell:
-            del self.stocks[stock]
+            long_stock_value = long_price * shares
+            agg_stock_value += long_stock_value
+
+        # then, consider short positions
+        for stock, shares in self.short.items():
+            try:
+                short_price = df_prices.at[date, stock]
+            except KeyError:
+                # when was this stock last traded?
+                last_traded = df_prices[stock].last_valid_index()
+                short_price = df_prices.at[last_traded, stock]
+
+            short_stock_value = short_price * shares
+            agg_stock_value -= short_stock_value
 
         return agg_stock_value
 
@@ -51,13 +60,10 @@ class Portfolio():
         return net_liquidation
 
     def print_portfolio(self):
-        for stock, shares in self.stocks.items():
+        for stock, shares in self.long.items():
             print(stock, shares)
 
 
 
 if __name__ == '__main__':
-    # p = Portfolio(stocks=1000, cash=10000)
-    # print(p.stocks)
-    # print(p.cash)
     pass
