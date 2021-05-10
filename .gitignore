@@ -17,3 +17,4 @@ xquant.egg-info/PKG-INFO
 xquant.egg-info/requires.txt
 xquant.egg-info/SOURCES.txt
 xquant.egg-info/top_level.txt
+xquant/backtest/__pycache__/data.cpython-38.pyc
