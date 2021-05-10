@@ -1,2 +1,0 @@
-# xuquant
-## Percival Dazheng Xu

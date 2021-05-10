@@ -1,0 +1,15 @@
+Metadata-Version: 1.1
+Name: xquant
+Version: 0.0.1
+Summary: quant is hard, make it easier.
+Home-page: UNKNOWN
+Author: Dazheng Percival Xu
+Author-email: <percival1205@gmail.com>
+License: UNKNOWN
+Description: xquant is a python 3 package that helps build and test strategies in the field of quantitative finance.
+Keywords: python,quantitative-finance
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Researchers
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: Microsoft :: Windows
