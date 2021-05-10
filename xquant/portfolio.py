@@ -4,6 +4,8 @@ from typing import Union
 from datetime import datetime
 from xquant.util import check_time
 
+# TODO
+# Add data class to replace self df attributes
 
 class Portfolio():
 
