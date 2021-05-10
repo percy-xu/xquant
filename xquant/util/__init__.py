@@ -15,7 +15,7 @@ def check_prices(**kwargs) -> bool:
 def check_time(**kwargs) -> bool:
     '''checks if one or more timestamps are of correct types'''
     for key, value in kwargs.items():
-        if (not isinstance(value, pd.Timestamp)) or (not isinstance(value, datetime.datetime)):
+        if (not isinstance(value, pd.Timestamp)) and (not isinstance(value, datetime.datetime)):
             print(f'{key} must be a pandas.Timestamp or datetime.datetime')
             return False
     return True
@@ -58,3 +58,5 @@ def business_days(month, df_index) -> pd.DatetimeIndex:
     month = pd.to_datetime(month)
     return df_index[str(month.year)+'-'+str(month.month)].index
 
+if __name__ == '__main__':
+    pass
