@@ -4,9 +4,6 @@ from typing import Union
 from datetime import datetime
 from xquant.util import check_time
 
-# TODO
-# Add data class to replace self df attributes
-
 class Portfolio():
 
     # constructor
@@ -22,8 +19,8 @@ class Portfolio():
     # methods
     def get_stock_liquidation(
         self, 
-        date:Union[pd.Timestamp, datetime]
-        
+        date:Union[pd.Timestamp, datetime],
+        df_prices:pd.DataFrame
         ) -> float:
 
         '''calculates the value of all stocks in a portfolio at a given time'''
@@ -33,13 +30,13 @@ class Portfolio():
         sell = []
 
         for stock, shares in self.stocks.items():
-            price = self.df_prices.at[date, stock]
+            price = df_prices.at[date, stock]
             stock_value = price * shares
             # was this stock suspended for trading?
-            if np.isnan(self.df_prices.at[date, stock]):
+            if np.isnan(df_prices.at[date, stock]):
                 # when was this stock last traded?
-                last_traded = self.df_prices[stock].last_valid_index()
-                self.cash += self.df_prices.at[last_traded, stock]
+                last_traded = df_prices[stock].last_valid_index()
+                self.cash += df_prices.at[last_traded, stock]
                 sell.append(stock)
             else:
                 agg_stock_value += stock_value
