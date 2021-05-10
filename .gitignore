@@ -1,1 +1,5 @@
 .vscode/settings.json
+.xquant.egg-info/
+.xquant/__pycache__/
+.xquant/backtest/__pycache__/
+.xquant/util/__pycache__/
