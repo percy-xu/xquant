@@ -31,10 +31,10 @@ class Period():
         self.end_time = end_time
         self.duration = duration
 
-    def contains_date(self, date:Union[datetime.datetime, pd.Timestamp]) -> bool:
+    def contains_time(self, time:Union[datetime.datetime, pd.Timestamp]) -> bool:
         '''checks if a time is within a period'''
-        assert check_time(date=date)
-        if self.start_time <= date <= self.end_time:
+        assert check_time(time=time)
+        if self.start_time <= time <= self.end_time:
             return True
         else:
             return False
