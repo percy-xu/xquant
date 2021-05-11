@@ -1,5 +1,5 @@
 import pandas as pd
-import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 def check_prices(**kwargs) -> bool:
@@ -16,7 +16,7 @@ def check_prices(**kwargs) -> bool:
 def check_time(**kwargs) -> bool:
     '''checks if one or more timestamps are of correct types'''
     for key, value in kwargs.items():
-        if (not isinstance(value, pd.Timestamp)) and (not isinstance(value, datetime.datetime)):
+        if (not isinstance(value, pd.Timestamp)) and (not isinstance(value, datetime)):
             print(f'{key} must be a pandas.Timestamp or datetime.datetime')
             return False
     return True
@@ -65,6 +65,22 @@ def add_suffix(ticker:str) -> str:
     
     return ticker
 
+def closest_trading_day(date, df_index, method:str=None) -> pd.Timestamp:
+    '''gets the closest trading day according to a provided index'''
+    assert check_time(date=date)
+    assert isinstance(df_index, pd.DatetimeIndex), 'df_index must be a pandas.DatetimeIndex'
+    assert method in [None, 'ffill','bfill'], "method must be one of None, 'ffill', or 'bfill'"
+
+    date = pd.to_datetime(date)
+    open_days = df_index
+    try:
+        idx = open_days.get_loc(date)
+    except KeyError:
+        idx = open_days.get_loc(date, method=method)
+
+    day = open_days[idx]    
+    return day
+
 def next_trading_day(date, df_index) -> pd.Timestamp:
     '''gets the next trading day after a certain date according to a provided index'''
     assert check_time(date=date)
@@ -76,10 +92,26 @@ def next_trading_day(date, df_index) -> pd.Timestamp:
         idx = open_days.get_loc(date) + 1
         next_day = open_days[idx]
     except KeyError:
-        idx = open_days.get_loc(date, method='backfill')
+        idx = open_days.get_loc(date, method='bfill')
         next_day = open_days[idx]
     
     return next_day
+
+def last_trading_day(date, df_index) -> pd.Timestamp:
+    '''gets the last trading day before a certain date according to a provided index'''
+    assert check_time(date=date)
+    assert isinstance(df_index, pd.DatetimeIndex), 'df_index must be a pandas.DatetimeIndex'
+
+    date = pd.to_datetime(date)
+    open_days = df_index
+    try:
+        idx = open_days.get_loc(date) - 1
+        last_day = open_days[idx]
+    except KeyError:
+        idx = open_days.get_loc(date, method='ffill')
+        last_day = open_days[idx]
+    
+    return last_day
 
 def business_days(month, df_index) -> pd.DatetimeIndex:
     '''returns all business days in a month accroding to a provided index'''
@@ -87,6 +119,30 @@ def business_days(month, df_index) -> pd.DatetimeIndex:
 
     month = pd.to_datetime(month)
     return df_index[str(month.year)+'-'+str(month.month)].index
+
+def quarter_generator(start, end) -> None:
+    '''
+    A generator that yields beginnings of quarters
+    '''
+    assert check_time(start=start, end=end)
+
+    date = start - timedelta(1)
+    end = end - pd.tseries.offsets.BQuarterBegin(startingMonth=1)
+    while date < end:
+        date = pd.Timestamp(date) + pd.tseries.offsets.BQuarterBegin(startingMonth=1)
+        yield date
+
+def quarter_begin(df, start, end) -> pd.DataFrame:
+    '''
+    Strips df to keep only quarter begin dates
+    '''
+    start_date = closest_trading_day(start, df.index, 'bfill')
+    end_date = closest_trading_day(end, df.index, 'ffill')
+    
+    dates = [i for i in quarter_generator(start, end)]
+    dates = [closest_trading_day(date, df.index, 'bfill') for date in dates]
+    
+    return df.loc[dates]
 
 def quarter_sum(ticker:str, year:int, quarter:int, df:pd.DataFrame, sum_col:str, ticker_col:Optional[str]='ticker', date_col:Optional[str]='date') -> float:
     '''
