@@ -6,13 +6,7 @@ from xquant.util import check_time
 
 class Portfolio():
 
-    def __init__(
-        self, 
-        long:dict,
-        short:dict,
-        cash:float
-        ) -> None:
-
+    def __init__(self, long:dict, short:dict, cash:float) -> None:
         self.long = long
         self.short = short
         self.cash = cash
@@ -60,10 +54,16 @@ class Portfolio():
         return net_liquidation
 
     def print_portfolio(self):
+        print('LONG POSITIONS')
+        print('--------------')
         for stock, shares in self.long.items():
             print(stock, shares)
-
-
+        
+        if self.short.items() != 0:
+            print('SHORT POSITIONS')
+            print('---------------')
+        for stock, shares in self.short.items():
+            print(stock, shares)
 
 if __name__ == '__main__':
     pass
