@@ -1,5 +1,6 @@
 import pandas as pd
 import datetime
+from typing import Optional
 
 def check_prices(**kwargs) -> bool:
     '''checks if one or more series of prices are of correct types'''
@@ -34,6 +35,35 @@ def convert_ticker(ticker) -> str:
         ticker = ticker.replace('.SZ', '.XSHE')
     return ticker
 
+def add_suffix(ticker:str) -> str:
+    '''
+    Adds Shanghai or Shenzhen stock exchange suffix (.SH or .SZ) to a ticker
+
+    Parameters
+    ----------
+    ticker : str
+        the ticker symbol to add suffix onto
+
+    Examples
+    --------
+    >>> from xquant.util import add_suffix
+    >>> add_suffix('1')
+    '000001.SZ'
+    >>> add_suffix('300001')
+    '300001.SZ'
+    >>> add_suffix('600001')
+    '600001.SH'
+    '''
+    ticker = ticker.zfill(6)
+    if len(ticker) > 6:
+        raise Exception('Cannot interpret ticker symbol')
+    
+    if ticker[0] == '6':
+        ticker += '.SH'
+    else:
+        ticker += '.SZ'
+    
+    return ticker
 
 def next_trading_day(date, df_index) -> pd.Timestamp:
     '''gets the next trading day after a certain date according to a provided index'''
@@ -57,6 +87,50 @@ def business_days(month, df_index) -> pd.DatetimeIndex:
 
     month = pd.to_datetime(month)
     return df_index[str(month.year)+'-'+str(month.month)].index
+
+def quarter_sum(ticker:str, year:int, quarter:int, df:pd.DataFrame, sum_col:str, ticker_col:Optional[str]='ticker', date_col:Optional[str]='date') -> float:
+    '''
+    calculates the sum of a stock's financial metrics (e.g. dividend, earnings, etc.) in a quarter
+    
+    Parameters
+    ----------
+    ticker : str
+        the ticker symbol to be looked up
+    year : int
+        the year to be looked up
+    quarter: int
+        the quarter to be looked up, one of 1, 2, 3 or 4
+    df : pd.DataFrame
+        the DataFrame where data is stored
+    sum_col : str
+        name of the column that contains the financial metric data to be summed
+    ticker_col : str, optional (default = 'ticker')
+        name of the column that contains the stock ticker symbols
+    date_col : str, optional (default = 'date')
+        name of the column that contains dates
+    '''
+    
+    assert isinstance(year, int), 'year must be an int'
+    assert quarter in [1,2,3,4], 'quarter must be one of 1, 2, 3, or 4'
+    assert isinstance(ticker, str), 'ticker must be a str'
+        
+    if quarter == 1:
+        start = datetime(year, 1, 1)
+        end = datetime(year, 3, 31)
+    elif quarter == 2:
+        start = datetime(year, 4, 1)
+        end = datetime(year, 6, 30)
+    elif quarter == 3:
+        start = datetime(year, 7, 1)
+        end = datetime(year, 9, 30)
+    else:
+        start = datetime(year, 10, 1)
+        end = datetime(year, 12, 31)
+    
+    df = df[df[ticker_col]==ticker] # look up ticker symbol
+    df = df[(start<=df[date_col]) & (df[date_col]<=end)] # look up date range
+    
+    return df[sum_col].sum()
 
 if __name__ == '__main__':
     pass
