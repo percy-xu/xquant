@@ -144,7 +144,7 @@ def quarter_begin(df, start, end) -> pd.DataFrame:
     
     return df.loc[dates]
 
-def quarter_sum(ticker:str, year:int, quarter:int, df:pd.DataFrame, sum_col:str, ticker_col:Optional[str]='ticker', date_col:Optional[str]='date') -> float:
+def quarter_sum(ticker:str, quarter:tuple, df:pd.DataFrame, sum_col:str, ticker_col:Optional[str]='ticker', date_col:Optional[str]='date') -> float:
     '''
     calculates the sum of a stock's financial metrics (e.g. dividend, earnings, etc.) in a quarter
     
@@ -152,10 +152,8 @@ def quarter_sum(ticker:str, year:int, quarter:int, df:pd.DataFrame, sum_col:str,
     ----------
     ticker : str
         the ticker symbol to be looked up
-    year : int
-        the year to be looked up
-    quarter: int
-        the quarter to be looked up, one of 1, 2, 3 or 4
+    quarter: tuple
+        the quarter to be looked up, e.g. 2nd quarter of 2021 is (2021, 2)
     df : pd.DataFrame
         the DataFrame where data is stored
     sum_col : str
@@ -165,7 +163,9 @@ def quarter_sum(ticker:str, year:int, quarter:int, df:pd.DataFrame, sum_col:str,
     date_col : str, optional (default = 'date')
         name of the column that contains dates
     '''
-    
+    year = quarter[0]
+    quarter = quarter[1]
+
     assert isinstance(year, int), 'year must be an int'
     assert quarter in [1,2,3,4], 'quarter must be one of 1, 2, 3, or 4'
     assert isinstance(ticker, str), 'ticker must be a str'
