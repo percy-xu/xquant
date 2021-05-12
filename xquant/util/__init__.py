@@ -1,6 +1,6 @@
 import pandas as pd
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Union
 
 def check_prices(**kwargs) -> bool:
     '''checks if one or more series of prices are of correct types'''
@@ -188,5 +188,56 @@ def quarter_sum(ticker:str, year:int, quarter:int, df:pd.DataFrame, sum_col:str,
     
     return df[sum_col].sum()
 
+def get_index_weights(df_mktcap:pd.DataFrame, df_members:pd.DataFrame, date:Union[pd.Timestamp, datetime]) -> pd.Series:
+    '''
+    calculates the weight for member stocks in a cap-weighted index at a certain date
+
+    Parameters
+    ----------
+    df_mktcap : pandas.DataFrame
+        DataFrame that has DatetimeIndex and tickers as columns
+    df_members : pandas.DataFrame
+        DataFrame that has includ and exclude columns of stocks in index
+    date: pandas.Timestamp or datetime.datetime
+
+    Example
+    -------
+    >>> df_mktcap
+                 A   B   C
+    date
+    2005-01-01  70  20  10
+    2010-01-01  75  15  10
+    2015-01-01  60  20  20
+    2020-01-01  50  20  30
+    
+    >>> df_members
+    ticker    included    excluded
+    A       2000-01-01         NaT
+    B       2000-01-01  2012-01-01
+    C       2010-01-01         NaT
+
+    >>> get_index_weights(df_mktcap, df_members, pd.Timestamp('2010-01-01'))
+        weight
+    A     0.75
+    B     0.15
+    C     0.10
+
+    >>> get_index_weights(df_mktcap, df_members, pd.Timestamp('2015-01-01'))
+        weight
+    A     0.75
+    C     0.25
+    '''
+    assert check_time(date=date)
+
+    # only need market cap data at date
+    mktcap = df_mktcap.loc[closest_trading_day(date, df_mktcap.index, 'bfill')]
+    # get all members of index at date
+    df_members = df_members[(df_members['included'] <= date) & (date < df_members['excluded'])]
+    members = [stock for stock in df_members['ticker'] if stock in mktcap.index] # keep only stocks with market cap data
+    mktcap = mktcap.loc[members]
+    
+    weight = (mktcap/mktcap.sum()).rename('weight')
+    return weight
+
 if __name__ == '__main__':
-    pass
+    get_index_weights()
