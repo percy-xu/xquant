@@ -188,7 +188,7 @@ def quarter_sum(ticker:str, quarter:tuple, df:pd.DataFrame, sum_col:str, ticker_
     
     return df[sum_col].sum()
 
-def get_index_weights(df_mktcap:pd.DataFrame, df_members:pd.DataFrame, date:Union[pd.Timestamp, datetime]) -> pd.Series:
+def get_index_weights(df_mktcap:pd.DataFrame, df_components:pd.DataFrame, date:Union[pd.Timestamp, datetime]) -> pd.Series:
     '''
     calculates the weight for member stocks in a cap-weighted index at a certain date
 
@@ -196,7 +196,7 @@ def get_index_weights(df_mktcap:pd.DataFrame, df_members:pd.DataFrame, date:Unio
     ----------
     df_mktcap : pandas.DataFrame
         DataFrame that has DatetimeIndex and tickers as columns
-    df_members : pandas.DataFrame
+    df_components : pandas.DataFrame
         DataFrame that has includ and exclude columns of stocks in index
     date: pandas.Timestamp or datetime.datetime
 
@@ -210,19 +210,19 @@ def get_index_weights(df_mktcap:pd.DataFrame, df_members:pd.DataFrame, date:Unio
     2015-01-01  60  20  20
     2020-01-01  50  20  30
     
-    >>> df_members
+    >>> df_components
     ticker    included    excluded
     A       2000-01-01         NaT
     B       2000-01-01  2012-01-01
     C       2010-01-01         NaT
 
-    >>> get_index_weights(df_mktcap, df_members, pd.Timestamp('2010-01-01'))
+    >>> get_index_weights(df_mktcap, df_components, pd.Timestamp('2010-01-01'))
         weight
     A     0.75
     B     0.15
     C     0.10
 
-    >>> get_index_weights(df_mktcap, df_members, pd.Timestamp('2015-01-01'))
+    >>> get_index_weights(df_mktcap, df_components, pd.Timestamp('2015-01-01'))
         weight
     A     0.75
     C     0.25
@@ -231,10 +231,10 @@ def get_index_weights(df_mktcap:pd.DataFrame, df_members:pd.DataFrame, date:Unio
 
     # only need market cap data at date
     mktcap = df_mktcap.loc[closest_trading_day(date, df_mktcap.index, 'bfill')]
-    # get all members of index at date
-    df_members = df_members[(df_members['included'] <= date) & (date < df_members['excluded'])]
-    members = [stock for stock in df_members['ticker'] if stock in mktcap.index] # keep only stocks with market cap data
-    mktcap = mktcap.loc[members]
+    # get all components of index at date
+    df_components = df_components[(df_components['included'] <= date) & (date < df_components['excluded'])]
+    components = [stock for stock in df_components['ticker'] if stock in mktcap.index] # keep only stocks with market cap data
+    mktcap = mktcap.loc[components]
     
     weight = (mktcap/mktcap.sum()).rename('weight')
     return weight
