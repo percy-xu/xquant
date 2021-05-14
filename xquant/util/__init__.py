@@ -239,5 +239,46 @@ def get_index_weights(df_mktcap:pd.DataFrame, df_components:pd.DataFrame, date:U
     weight = (mktcap/mktcap.sum()).rename('weight')
     return weight
 
+def get_eps(
+        ticker:str, 
+        date:Union, 
+        df_price:pd.DataFrame, 
+        df_mktcap:pd.DataFrame, 
+        df_earnings:pd.DataFrame, 
+        earnings_col:str='earnings', 
+        date_col:str='date'
+        ) -> float:
+    '''calculates the earnings per share for a stock at a date'''
+    assert check_time(date=date)
+
+    date = closest_trading_day(date, df_price.index, 'bfill')
+    price = df_price.at[date, ticker]
+    mktcap = df_mktcap.at[date, ticker] * 10000
+    shares = mktcap / price
+    earnings = df_earnings.query(f"ticker=='{ticker}'")
+    earnings = earnings[earnings[date_col] <= date]
+    total_earnings = earnings[-1:][earnings_col].values[0]
+
+    eps = total_earnings / shares
+    return eps
+
+def get_pe_ratio(
+        ticker:str, 
+        date:Union, 
+        df_price:pd.DataFrame, 
+        df_mktcap:pd.DataFrame, 
+        df_earnings:pd.DataFrame, 
+        earnings_col:str='earnings', 
+        date_col:str='date'
+        ) -> float:
+    '''wrapper function that calculates the price to earnings ratio of a stock at a date'''
+    assert check_time(date=date)
+
+    date = closest_trading_day(date, df_price.index, 'bfill')
+    eps = get_eps(ticker, date, df_price, df_mktcap, df_earnings, earnings_col, date_col)
+    price = df_price.at[date, ticker]
+    pe_ratio =  price / eps
+    return pe_ratio
+
 if __name__ == '__main__':
-    get_index_weights()
+    pass
