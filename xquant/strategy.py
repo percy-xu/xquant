@@ -13,6 +13,6 @@ class Strategy(ABC):
         self.strategy_name = strategy_name
 
     @abstractmethod
-    def stock_selection() -> Portfolio:
+    def stock_selection(self, funds, date) -> Portfolio:
         '''selects a portfolio of stocks and shares from the stock selection universe'''
         pass
