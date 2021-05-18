@@ -370,5 +370,3 @@ def show_metrics(strategy, benchmark):
     # print(f'| Turnover Ratio:    {round(to_r*100, 2)}%')
     print(f'| Tracking Error:    {round(trk_err*100, 2)}%')
     print('============================================')
-
-
