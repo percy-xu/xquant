@@ -5,7 +5,7 @@ from xquant.portfolio import Portfolio
 from typing import Union
 import pickle
 from os import getcwd
-from pandas import Timestamp
+from pandas import Timestamp, Series
 
 
 class Holdings():
@@ -30,6 +30,9 @@ class Holdings():
                 return portfolio
         raise Exception('date not within holdings history')
 
+    # TODO
+    def generate_performance(normalize=100) -> Series:
+        pass
 
 def export_holdings(holdings) -> None:
     with open(f'holdings_{hex(id(holdings))}.dat', "wb") as f:
