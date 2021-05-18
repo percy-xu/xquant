@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from typing import Union
 from xquant.util import check_prices, check_time
+import plotly.graph_objects as go
 
 def get_daily_returns(prices) -> pd.Series:
     '''calculates the daily returns of a prices time-series'''
@@ -302,3 +303,72 @@ def get_tracking_error(strategy, benchmark, start_date, end_date) -> float:
 
     tracking_error = ann_ex_r / ir
     return tracking_error
+
+def plot_performance(strategy, benchmark):
+
+    date_range = strategy.index
+    excess_return = get_excess_return(
+        strategy, benchmark, date_range[0], date_range[-1])
+
+    # plot graph
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=date_range,
+                                y=benchmark, mode='lines', name='Benchmark'))
+    fig.add_trace(go.Scatter(x=date_range,
+                                y=strategy, mode='lines', name='Strategy'))
+    fig.add_trace(go.Scatter(x=date_range, y=excess_return *
+                                100, line={'dash': 'dot'}, name='Excess Return'))
+    fig.show()
+
+def show_metrics(strategy, benchmark):
+    assert check_prices(strategy=strategy, benchmark=benchmark)
+
+    start_date = strategy.index[0]
+    end_date = strategy.index[-1]
+
+    cum_r = get_cumulative_return(strategy, start_date, end_date)
+    ann_r = get_annualized_return(strategy, start_date, end_date)
+    ann_ex_r = get_annualized_excess_return(
+        strategy, benchmark, start_date, end_date)
+    max_dd = get_max_drawdown(strategy, start_date, end_date)
+    vo = get_strategy_volatility(strategy, start_date, end_date)
+    sharpe = get_sharpe_ratio(strategy, start_date, end_date)
+    ir = get_information_ratio(
+        strategy, benchmark, start_date, end_date)
+    beta = get_beta(strategy, benchmark, start_date, end_date)
+    alpha = get_alpha(strategy, benchmark, start_date, end_date)
+    # win_r = get_win_rate(start_date, end_date)
+    win_r_d = get_daily_win_rate(
+        strategy, benchmark, start_date, end_date)
+    # pl = get_pl_ratio(start_date, end_date)
+    # to_r = get_turnover_ratio(start_date, end_date, self.data[1])
+    trk_err = get_tracking_error(
+        strategy, benchmark, start_date, end_date)
+
+    print('\n============================================')
+    print('| Key Metrics ')
+    print('============================================')
+    print(f'| Start Date:        {start_date.date()}')
+    print(f'| End Date:          {end_date.date()}')
+    print('============================================')
+    print(f'| Cumulative Return: {round(cum_r*100, 2)}%')
+    print(f'| Annualized Return: {round(ann_r*100, 2)}%')
+    print(f'| Annualized Excess: {round(ann_ex_r*100, 2)}%')
+    print(f'| Maximum Drawdown:  {round(max_dd*100, 2)}%')
+    print('============================================')
+    print(f'| Information Ratio: {round(ir, 3)}')
+    print(f'| Sharpe Ratio:      {round(sharpe, 3)}')
+    print(f'| Volatility:        {round(vo, 3)}')
+    print('============================================')
+    print(f'| Alpha:             {round(alpha, 3)}')
+    print(f'| Beta:              {round(beta, 3)}')
+    print('============================================')
+    # print(f'| Win Rate:          {round(win_r*100, 2)}%')
+    print(f'| Daily Win Rate:    {round(win_r_d*100, 2)}%')
+    # print(f'| Profit-Loss Ratio: {round(pl, 1)} : 1')
+    print('============================================')
+    # print(f'| Turnover Ratio:    {round(to_r*100, 2)}%')
+    print(f'| Tracking Error:    {round(trk_err*100, 2)}%')
+    print('============================================')
+
+
