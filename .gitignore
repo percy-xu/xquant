@@ -19,3 +19,5 @@ xquant/__pycache__/portfolio.cpython-38.pyc
 xquant/__pycache__/strategy.cpython-38.pyc
 __pycache__/__init__.cpython-38.pyc
 __pycache__/nonchalance.cpython-38.pyc
+xquant/backtest/__pycache__/backtest.cpython-38.pyc
+xquant/backtest/__pycache__/holdings.cpython-38.pyc
