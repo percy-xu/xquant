@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from typing import Union
+from pandas.io.stata import StataWriter
 from xquant.util import check_prices, check_time
 import plotly.graph_objects as go
 
@@ -306,7 +306,9 @@ def get_tracking_error(strategy, benchmark, start_date, end_date) -> float:
 
 def plot_performance(strategy, benchmark):
 
-    date_range = strategy.index
+    date_range = pd.date_range(start=strategy.index[0], end=strategy.index[-1])
+    benchmark = benchmark.reindex(date_range, method='ffill')
+
     excess_return = get_excess_return(
         strategy, benchmark, date_range[0], date_range[-1])
 

@@ -18,7 +18,7 @@ class Portfolio():
         ) -> float:
 
         '''calculates the value of all long/short positions in a portfolio at a given time'''
-        assert check_time(date)
+        assert check_time(date=date)
 
         df_prices = df_prices.loc[:date] # trim df to be within valid dates
         agg_stock_value = 0
@@ -49,18 +49,18 @@ class Portfolio():
 
         return agg_stock_value
 
-    def get_net_liquidation(self, date=None):
-        net_liquidation = self.get_stock_liquidation(date) + self.cash
+    def get_net_liquidation(self, date, df_prices):
+        net_liquidation = self.get_stock_liquidation(date, df_prices) + self.cash
         return net_liquidation
 
     def print_portfolio(self):
-        print('LONG POSITIONS')
+        print('\nLONG POSITIONS')
         print('--------------')
         for stock, shares in self.long.items():
             print(stock, shares)
         
         if self.short.items() != 0:
-            print('SHORT POSITIONS')
+            print('\nSHORT POSITIONS')
             print('---------------')
         for stock, shares in self.short.items():
             print(stock, shares)
