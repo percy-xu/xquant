@@ -58,12 +58,14 @@ class Portfolio():
         print('--------------')
         for stock, shares in self.long.items():
             print(stock, shares)
+        print('\n')
         
-        if self.short.items() != 0:
-            print('\nSHORT POSITIONS')
+        if len(self.short.items()) != 0:
+            print('SHORT POSITIONS')
             print('---------------')
-        for stock, shares in self.short.items():
-            print(stock, shares)
+            for stock, shares in self.short.items():
+                print(stock, shares)
+            print('\n')
 
 if __name__ == '__main__':
     pass
