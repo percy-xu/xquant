@@ -328,6 +328,9 @@ def show_metrics(strategy, benchmark):
     start_date = strategy.index[0]
     end_date = strategy.index[-1]
 
+    date_range = pd.date_range(start=start_date, end=end_date)
+    benchmark = benchmark.reindex(date_range, method='ffill')
+
     cum_r = get_cumulative_return(strategy, start_date, end_date)
     ann_r = get_annualized_return(strategy, start_date, end_date)
     ann_ex_r = get_annualized_excess_return(
