@@ -1,6 +1,6 @@
+from xquant.backtest.holdings import Holdings
 import pandas as pd
 import numpy as np
-from pandas.io.stata import StataWriter
 from xquant.util import check_prices, check_time
 import plotly.graph_objects as go
 
@@ -43,7 +43,7 @@ def get_annualized_return(prices, start_date, end_date, period='d') -> float:
     cum_rtn = get_cumulative_return(prices, start_date, end_date)
     # how many times should return be compounded in this period?
     if period == 'd':
-        days = len(prices.index)
+        days = (end_date - start_date).days
         exp = 250/days
     elif period == 'w':
         weeks = (end_date.to_period('W') - start_date.to_period('W')).n
@@ -65,7 +65,7 @@ def get_annualized_excess_return(strategy, benchmark, start_date, end_date) -> f
     strategy = strategy.loc[start_date:end_date]
     benchmark = benchmark.loc[start_date:end_date]
     start_date, end_date = strategy.index[0], strategy.index[-1]
-
+    
     strategy_return = get_annualized_return(strategy, start_date, end_date)
     market_return = get_annualized_return(benchmark, start_date, end_date)
 
@@ -175,27 +175,29 @@ def get_alpha(strategy, benchmark, start_date, end_date, risk_free=0.04) -> floa
     alpha = round(alpha, 4)
     return alpha
 
-# def get_win_rate(self, start_date, end_date) -> float:
-#     start_date, end_date = pd.to_datetime(
-#         start_date), pd.to_datetime(end_date)
-#     # trim log to fit within the time period
-#     log = [transaction for transaction in self.log if start_date <=
-#             transaction[0] <= end_date]
-#     # how many transactions has taken place?
-#     transactions = len(log) - 1
-#     # the initial value is the portfolio's net liquidation at day zero
-#     current_val = log[0][1].get_net_liquidation(log[0][0])
-#     # iterate over log and determine portfolio value at each transaction
-#     gain = 0
-#     for i in range(1, len(log)):
-#         current_date = log[i][0]
-#         portfolio_val = log[i][1].get_net_liquidation(current_date)
-#         if portfolio_val >= current_val:
-#             gain += 1
-#         current_val = portfolio_val
-#     # calculate win rate
-#     win_rate = gain / transactions
-#     return win_rate
+def get_win_rate(start_date, end_date, holdings, df_price) -> float:
+    assert check_time(start_date=start_date, end_date=end_date)
+    
+    periods = list(holdings.holdings.keys())
+    # trim log to fit within the time period
+    periods = [date for date in periods if start_date <= date.start_time <= end_date][1:]
+    # how many periods are there?
+    n_periods = len(periods)
+    winning_periods = 0
+
+    for period in periods:
+        portfolio = holdings.holdings[period]
+        # get portfolio value at start and end time
+        start_val = portfolio.get_net_liquidation(period.start_time, df_price)
+        end_val = portfolio.get_net_liquidation(period.end_time, df_price)
+        
+        # if the rebalance made a profit, increase gains by 1
+        if end_val > start_val:
+            winning_periods += 1
+
+    # calculate win rate
+    win_rate = winning_periods / n_periods
+    return win_rate
 
 def get_daily_win_rate(strategy, benchmark, start_date, end_date) -> float:
     '''calculates the daily win rate of a strategy compared to a benchmark'''
@@ -219,29 +221,32 @@ def get_daily_win_rate(strategy, benchmark, start_date, end_date) -> float:
     daily_win_rate = round(daily_win_rate, 4)
     return daily_win_rate
 
-# def get_pl_ratio(self, start_date, end_date):
-#     start_date, end_date = pd.to_datetime(
-#         start_date), pd.to_datetime(end_date)
-#     # trim log to fit within the time period
-#     log = [transaction for transaction in self.log if start_date <=
-#             transaction[0] <= end_date]
-#     # the initial value is the portfolio's net liquidation at day zero
-#     current_val = log[0][1].get_net_liquidation(log[0][0])
-#     # iterate over log and determine portfolio value at each transaction
-#     profit, loss = [], []
-#     for i in range(1, len(log)):
-#         current_date = log[i][0]
-#         portfolio_val = log[i][1].get_net_liquidation(current_date)
-#         if portfolio_val >= current_val:
-#             profit.append(portfolio_val-current_val)
-#         else:
-#             loss.append(current_val-portfolio_val)
-#     # calculate average profits and losses
-#     avg_profit = np.mean(profit)
-#     avg_loss = np.mean(loss)
-#     # calculate P/L ratio
-#     pl_ratio = avg_profit / avg_loss
-#     return pl_ratio
+def get_pl_ratio(start_date, end_date, holdings, df_price):
+    assert check_time(start_date=start_date, end_date=end_date)
+    
+    periods = list(holdings.holdings.keys())
+    # trim log to fit within the time period
+    periods = [date for date in periods if start_date <= date.start_time <= end_date][1:]
+    profit, loss = [], []
+
+    for period in periods:
+        portfolio = holdings.holdings[period]
+        # get portfolio value at start and end time
+        start_val = portfolio.get_net_liquidation(period.start_time, df_price)
+        end_val = portfolio.get_net_liquidation(period.end_time, df_price)
+        
+        # if the rebalance made a profit, increase gains by 1
+        if end_val > start_val:
+            profit.append(end_val - start_val)
+        elif end_val < start_val:
+            loss.append(start_val - end_val)
+    
+    # calculate average profits and losses
+    avg_profit = np.mean(profit)
+    avg_loss = np.mean(loss)
+    # calculate P/L ratio
+    pl_ratio = avg_profit / avg_loss
+    return pl_ratio
 
 def get_excess_return(strategy, benchmark, start_date, end_date) -> float:
     '''calculates the excess return of a strategy over a benchmark between two dates'''
@@ -322,19 +327,33 @@ def plot_performance(strategy, benchmark):
                                 100, line={'dash': 'dot'}, name='Excess Return'))
     fig.show()
 
-def show_metrics(strategy, benchmark):
+def show_metrics(strategy, benchmark, holdings, df_price):
+    '''
+    prints out a chart that shows columns of metrics
+
+    Parameters
+    ----------
+    strategy : pandas.Series
+        the performance of the strategy being backtested
+    benchmark : pandas.Series
+        the performance of the benchmark used in backtest
+    '''
     assert check_prices(strategy=strategy, benchmark=benchmark)
 
     start_date = strategy.index[0]
     end_date = strategy.index[-1]
 
+    benchmark = benchmark.loc[start_date:end_date]
+
     date_range = pd.date_range(start=start_date, end=end_date)
     benchmark = benchmark.reindex(date_range, method='ffill')
+    benchmark.fillna(method='bfill', inplace=True)
 
     cum_r = get_cumulative_return(strategy, start_date, end_date)
     ann_r = get_annualized_return(strategy, start_date, end_date)
     ann_ex_r = get_annualized_excess_return(
         strategy, benchmark, start_date, end_date)
+    
     max_dd = get_max_drawdown(strategy, start_date, end_date)
     vo = get_strategy_volatility(strategy, start_date, end_date)
     sharpe = get_sharpe_ratio(strategy, start_date, end_date)
@@ -342,10 +361,9 @@ def show_metrics(strategy, benchmark):
         strategy, benchmark, start_date, end_date)
     beta = get_beta(strategy, benchmark, start_date, end_date)
     alpha = get_alpha(strategy, benchmark, start_date, end_date)
-    # win_r = get_win_rate(start_date, end_date)
-    win_r_d = get_daily_win_rate(
-        strategy, benchmark, start_date, end_date)
-    # pl = get_pl_ratio(start_date, end_date)
+    win_r = get_win_rate(start_date, end_date, holdings, df_price)
+    win_r_d = get_daily_win_rate(strategy, benchmark, start_date, end_date)
+    pl = get_pl_ratio(start_date, end_date, holdings, df_price)
     # to_r = get_turnover_ratio(start_date, end_date, self.data[1])
     trk_err = get_tracking_error(
         strategy, benchmark, start_date, end_date)
@@ -368,9 +386,9 @@ def show_metrics(strategy, benchmark):
     print(f'| Alpha:             {round(alpha, 3)}')
     print(f'| Beta:              {round(beta, 3)}')
     print('============================================')
-    # print(f'| Win Rate:          {round(win_r*100, 2)}%')
+    print(f'| Win Rate:          {round(win_r*100, 2)}%')
     print(f'| Daily Win Rate:    {round(win_r_d*100, 2)}%')
-    # print(f'| Profit-Loss Ratio: {round(pl, 1)} : 1')
+    print(f'| Profit-Loss Ratio: {round(pl, 1)} : 1')
     print('============================================')
     # print(f'| Turnover Ratio:    {round(to_r*100, 2)}%')
     print(f'| Tracking Error:    {round(trk_err*100, 2)}%')
