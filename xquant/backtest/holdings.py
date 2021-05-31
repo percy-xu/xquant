@@ -16,7 +16,7 @@ class Holdings():
 
     Parameters
     ----------
-    holdings: a dict that has xquant Period objects as keys and xquant Portfolio objects as values
+    holdings: a dict that has xquant.util.period.Period objects as keys and xquant.portfolio.Portfolio objects as values
     '''
 
     def __init__(self, holdings: dict) -> None:
