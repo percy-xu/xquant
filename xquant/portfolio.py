@@ -6,7 +6,7 @@ from xquant.util import check_time
 
 class Portfolio():
 
-    def __init__(self, long:dict, short:dict, cash:float) -> None:
+    def __init__(self, long:dict={}, short:dict={}, cash:float=0) -> None:
         self.long = long
         self.short = short
         self.cash = cash
