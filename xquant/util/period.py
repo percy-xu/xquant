@@ -39,5 +39,20 @@ class Period():
         else:
             return False
 
+    def __lt__(self, o: object) -> bool:
+        return self.start_time < o.start_time
+    
+    def __gt__(self, o: object) -> bool:
+        return self.start_time > o.start_time
+    
+    def __eq__(self, o: object) -> bool:
+        return self.start_time == o.start_time and self.end_time == o.end_time
+    
+    def __ne__(self, o: object) -> bool:
+        return not self.__eq__(o)
+    
+    def __hash__(self):
+        return hash((self.start_time, self.end_time))
+
 if __name__ == '__main__':
     pass
