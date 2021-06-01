@@ -2,7 +2,9 @@ from xquant.backtest.holdings import Holdings
 import pandas as pd
 import numpy as np
 from xquant.util import check_prices, check_time
+from xquant.portfolio import Portfolio
 import plotly.graph_objects as go
+from collections import Counter
 
 def get_daily_returns(prices) -> pd.Series:
     '''calculates the daily returns of a prices time-series'''
@@ -121,6 +123,21 @@ def get_sharpe_ratio(prices, start_date, end_date, risk_free=0.04) -> float:
     sharpe_ratio = excess_rtn / vo
     sharpe_ratio = round(sharpe_ratio, 4)
     return sharpe_ratio
+
+def get_risk_adjusted_return(prices, start_date, end_date) -> float:
+    '''calculates the risk-adjusted return of a prices time-series between two dates'''
+    assert check_prices(prices=prices)
+    assert check_time(start_date=start_date, end_date=end_date)
+
+    prices = prices.loc[start_date:end_date]
+    start_date, end_date = prices.index[0], prices.index[-1]
+
+    ann_rtn = get_annualized_return(prices, start_date, end_date)
+    vo = get_strategy_volatility(prices, start_date, end_date)
+
+    risk_adj_rtn = ann_rtn / vo
+    risk_adj_rt = round(risk_adj_rtn, 4)
+    return risk_adj_rt
 
 def get_information_ratio(strategy, benchmark, start_date, end_date) -> float:
     '''calculates the information ratio of a prices time-series between two dates'''
@@ -264,39 +281,45 @@ def get_excess_return(strategy, benchmark, start_date, end_date) -> float:
     excess_return = round(excess_return, 4)
     return excess_return
 
-# def get_turnover_ratio(self, start_date, end_date, df_prices):
-#     start_date, end_date = pd.to_datetime(
-#         start_date), pd.to_datetime(end_date)
-#     # trim log to fit within the time period
-#     log = [transaction for transaction in self.log if start_date <=
-#             transaction[0] <= end_date]
+def get_turnover_ratio(start_date, end_date, holdings, df_price):
+    '''
+    Calculates the turnover ratio of a portfolio over a holding period.
+    Only long positions are taken into consideration, short positions are ignored.
+    '''
+    assert check_time(start_date=start_date, end_date=end_date)
+    
+    periods = sorted(list(holdings.holdings.keys()))
+    # trim log to fit within the time period
+    periods = [period for period in periods if start_date <= period.start_time <= end_date]
+    rebalance_dates = [period.end_time for period in periods][:-1]
+    
+    start_portfolio = holdings.holdings[periods[0]]
+    end_portfolio = holdings.holdings[periods[-1]]
+    start_val = start_portfolio.get_net_liquidation(periods[0].start_time, df_price)
+    end_val = end_portfolio.get_net_liquidation(periods[-1].end_time, df_price)
 
-#     begin_liquidation = log[0][1].get_net_liquidation(log[0][0])
-#     end_liquidation = log[-1][1].get_net_liquidation(log[-1][0])
-#     avg_liquidation = (end_liquidation + begin_liquidation) / 2
-#     n_years = log[-1][0].year - log[0][0].year
+    agg_turnover = 0
+    buy_value = sell_value = []
 
-#     history = self.get_transaction_history()
-#     agg_turnover = 0
-#     for i in range(1, len(history)):
-#         date = log[i][0]
-#         curr_transaction = history[i][date]
+    for day in rebalance_dates:
+        
+        pre_portfolio = holdings.get_portfolio(day).long
+        post_portfolio = holdings.get_portfolio(day + pd.Timedelta(days=1)).long
+        buy_portfolio = Portfolio(long = dict(Counter(post_portfolio)-Counter(pre_portfolio)))
+        sell_portfolio = Portfolio(long = dict(Counter(pre_portfolio)-Counter(post_portfolio)))
 
-#         buy_portfolio = Portfolio(
-#             stocks=curr_transaction['buy'], df_prices=df_prices)
-#         sell_portfolio = Portfolio(
-#             stocks=curr_transaction['sell'], df_prices=df_prices)
+        buy_value = buy_portfolio.get_net_liquidation(day, df_price)
+        sell_value = sell_portfolio.get_net_liquidation(day, df_price)
 
-#         buy_value = buy_portfolio.get_net_liquidation(date)
-#         sell_value = sell_portfolio.get_net_liquidation(date)
+        turnover = (buy_value + sell_value) / 2
+        agg_turnover += turnover
 
-#         turnover = (buy_value + sell_value) / 2
-#         agg_turnover += turnover
+    avg_liquidation = (end_val + start_val) / 2
+    n_years = periods[-1].end_time.year - periods[0].start_time.year
+    avg_annual_turnover = agg_turnover / n_years
+    avg_turnover_ratio = avg_annual_turnover / avg_liquidation
 
-#     avg_annual_turnover = agg_turnover / n_years
-#     avg_turnover_ratio = avg_annual_turnover / avg_liquidation
-
-#     return avg_turnover_ratio
+    return avg_turnover_ratio
 
 def get_tracking_error(strategy, benchmark, start_date, end_date) -> float:
     '''calculates the tracking error of a strategy compared to a benchmark'''
@@ -356,6 +379,7 @@ def show_metrics(strategy, benchmark, holdings, df_price):
     
     max_dd = get_max_drawdown(strategy, start_date, end_date)
     vo = get_strategy_volatility(strategy, start_date, end_date)
+    risk_adj = get_risk_adjusted_return(strategy, start_date, end_date)
     sharpe = get_sharpe_ratio(strategy, start_date, end_date)
     ir = get_information_ratio(
         strategy, benchmark, start_date, end_date)
@@ -364,7 +388,7 @@ def show_metrics(strategy, benchmark, holdings, df_price):
     win_r = get_win_rate(start_date, end_date, holdings, df_price)
     win_r_d = get_daily_win_rate(strategy, benchmark, start_date, end_date)
     pl = get_pl_ratio(start_date, end_date, holdings, df_price)
-    # to_r = get_turnover_ratio(start_date, end_date, self.data[1])
+    to_r = get_turnover_ratio(start_date, end_date, holdings, df_price)
     trk_err = get_tracking_error(
         strategy, benchmark, start_date, end_date)
 
@@ -379,6 +403,7 @@ def show_metrics(strategy, benchmark, holdings, df_price):
     print(f'| Annualized Excess: {round(ann_ex_r*100, 2)}%')
     print(f'| Maximum Drawdown:  {round(max_dd*100, 2)}%')
     print('============================================')
+    print(f'| Risk Adjusted:     {round(risk_adj, 3)}')
     print(f'| Information Ratio: {round(ir, 3)}')
     print(f'| Sharpe Ratio:      {round(sharpe, 3)}')
     print(f'| Volatility:        {round(vo, 3)}')
@@ -390,6 +415,6 @@ def show_metrics(strategy, benchmark, holdings, df_price):
     print(f'| Daily Win Rate:    {round(win_r_d*100, 2)}%')
     print(f'| Profit-Loss Ratio: {round(pl, 1)} : 1')
     print('============================================')
-    # print(f'| Turnover Ratio:    {round(to_r*100, 2)}%')
+    print(f'| Turnover Ratio:    {round(to_r*100, 2)}%')
     print(f'| Tracking Error:    {round(trk_err*100, 2)}%')
     print('============================================')
