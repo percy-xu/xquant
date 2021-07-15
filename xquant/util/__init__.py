@@ -232,6 +232,7 @@ def get_index_weights(df_mktcap:pd.DataFrame, df_components:pd.DataFrame, date:U
     # only need market cap data at date
     mktcap = df_mktcap.loc[closest_trading_day(date, df_mktcap.index, 'bfill')]
     # get all components of index at date
+    df_components['excluded'] = df_components['excluded'].fillna(pd.Timestamp('20991231'))
     df_components = df_components[(df_components['included'] <= date) & (date < df_components['excluded'])]
     components = [stock for stock in df_components['ticker'] if stock in mktcap.index] # keep only stocks with market cap data
     mktcap = mktcap.loc[components]

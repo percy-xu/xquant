@@ -102,6 +102,7 @@ def get_strategy_volatility(prices, start_date, end_date) -> float:
     prices = prices.loc[start_date:end_date]
     start_date, end_date = prices.index[0], prices.index[-1]
     prices_chg = pd.Series(data=get_daily_returns(prices), index=prices.index)
+    prices_chg = prices_chg[prices_chg != 0]
 
     strat_vo = np.std(prices_chg) * np.sqrt(250)
     strat_vo = round(strat_vo, 4)
@@ -146,7 +147,13 @@ def get_information_ratio(strategy, benchmark, start_date, end_date) -> float:
 
     excess_return = get_annualized_excess_return(strategy, benchmark, start_date, end_date)
 
-    daily_excess_return = get_daily_returns(strategy) - get_daily_returns(benchmark)
+    strategy_daily = get_daily_returns(strategy)
+    benchmark_daily = get_daily_returns(benchmark)
+
+    strategy_daily = strategy_daily[strategy_daily != 0]
+    benchmark_daily = benchmark_daily[benchmark_daily != 0]
+
+    daily_excess_return = strategy_daily - benchmark_daily
     daily_stdev = np.std(daily_excess_return) * np.sqrt(250)
 
     ir = excess_return / daily_stdev
