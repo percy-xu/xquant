@@ -99,7 +99,7 @@ def get_strategy_volatility(prices, start_date, end_date) -> float:
     assert check_prices(prices=prices)
     assert check_time(start_date=start_date, end_date=end_date)
 
-    change = price.pct_change().dropna()
+    change = prices.pct_change().dropna()
     change = change[change != 0]
     
     change_avg = np.mean(change)
