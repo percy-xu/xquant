@@ -99,14 +99,15 @@ def get_strategy_volatility(prices, start_date, end_date) -> float:
     assert check_prices(prices=prices)
     assert check_time(start_date=start_date, end_date=end_date)
 
-    prices = prices.loc[start_date:end_date]
-    start_date, end_date = prices.index[0], prices.index[-1]
-    prices_chg = pd.Series(data=get_daily_returns(prices), index=prices.index)
-    prices_chg = prices_chg[prices_chg != 0]
+    change = price.pct_change().dropna()
+    change = change[change != 0]
+    
+    change_avg = np.mean(change)
+    daily_sum = np.sum([(c-change_avg)**2 for c in change])
 
-    strat_vo = np.std(prices_chg) * np.sqrt(250)
-    strat_vo = round(strat_vo, 4)
-    return strat_vo
+    vo = np.sqrt((250/((end_date-start_date).days-1)) * daily_sum)
+    vo = round(vo, 4)
+    return vo
 
 def get_sharpe_ratio(prices, start_date, end_date, risk_free=0.04) -> float:
     '''calculates the sharpe ratio of a prices time-series between two dates'''
